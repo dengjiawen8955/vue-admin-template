@@ -56,19 +56,6 @@ export const constantRoutes = [
   },
 
   {
-    path: '/',
-    component: Layout,
-    redirect: '/youke_client',
-    children: [{
-      path: 'youke_client',
-      name: 'Dashboard',
-      component: () => import('@/views/youke/client'),
-      meta: { title: 'Dashboard', icon: 'dashboard' }
-    }]
-  },
-
-
-  {
     path: '/example',
     component: Layout,
     redirect: '/example/table',

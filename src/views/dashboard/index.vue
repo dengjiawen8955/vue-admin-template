@@ -1,58 +1,115 @@
 <template>
-  <div class="dashboard-container">
-    <div class="dashboard-text">name: {{ name }}</div>
-    <div class="dashboard-text">Hello</div>
-    <!-- 选择图片按钮 -->
-    <el-button type="primary" @click="chooseImage">选择图片</el-button>
-    <!-- 上传图片按钮 -->
-    <el-button type="primary" @click="uploadImage">提交图片</el-button>
+  <div class="container">
+    <el-upload class="avatar-uploader" action="https://jsonplaceholder.typicode.com/posts/" :show-file-list="false"
+      accept="image/*" :before-upload="beforeAvatarUpload">
+      <img v-if="imageUrl" :src="imageUrl" class="avatar">
+      <i v-else class="el-icon-plus avatar-uploader-icon"></i>
+    </el-upload>
   </div>
 </template>
 
 <script>
-import { mapGetters } from 'vuex'
+import { compressImages } from '@/utils/image'
+import { uploadImage } from '@/api/youke'
 
 export default {
   name: 'Dashboard',
-  computed: {
-    ...mapGetters([
-      'name'
-    ])
-  },
   data() {
     return {
-      file: null,
-    }
+      imageUrl: '',
+      fil2: null,
+    };
   },
   methods: {
-    // 选择图片
-    chooseImage() {
-      this.$refs.file.click()
+    downloadFile2() {
+      const blob = new Blob([this.file2], { type: 'image/jpeg' })
+      const link = document.createElement('a')
+      link.href = window.URL.createObjectURL(blob)
+      link.download = this.file2.name
+      link.click()
     },
-    // 上传图片
-    uploadImage() {
-      const formData = new FormData()
-      formData.append('file', this.file)
-      this.$axios.post('/upload', formData).then(res => {
-        console.log(res)
-      })
-    },
-    // 选择图片后的回调
-    handleFileChange(e) {
-      this.file = e.target.files[0]
+    async beforeAvatarUpload(file, fileList) {
+      // 压缩图片
+      // console.log('[压缩前]图片大小：', file.size / 1024, 'KB')
+      // const blob = compressAccurately(file, 0.5)
+      // console.log('[压缩后]图片大小：', blob.size / 1024, 'KB')
+
+      // 打印图片信息
+      console.log('[图片信息]', file)
+
+      // 压缩图片
+      const file2 = await compressImages(file);
+      this.file2 = file2
+
+      // 打印图片信息
+      console.log('[图片信息]2', file2)
+
+      // 图片转化为 base64
+      const reader = new FileReader()
+      reader.readAsDataURL(file2)
+      reader.onload = () => {
+        const base64Str = reader.result
+        console.log('[base64] length', base64Str.length)
+
+        // 压缩图片
+
+        const data = {
+          "base64_str": base64Str,
+          "file_name": file2.name,
+        }
+
+        uploadImage(data).then(res => {
+          console.log(res)
+          this.imageUrl = res.data.url
+        })
+      }
+
+      // 跳过默认上传
+      return false
     }
   }
 }
 </script>
 
-<style lang="scss" scoped>
-.dashboard {
-  &-container {
-    margin: 30px;
-  }
-  &-text {
-    font-size: 30px;
-    line-height: 46px;
-  }
+
+<style>
+
+/* flex居中布局 */
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
+/* container 每个子元素间距 */
+.container > * {
+  margin: 10px 0;
+}
+
+.avatar-uploader .el-upload {
+  border: 1px dashed #d9d9d9;
+  border-radius: 6px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.avatar-uploader .el-upload:hover {
+  border-color: #409EFF;
+}
+
+.avatar-uploader-icon {
+  font-size: 28px;
+  color: #8c939d;
+  width: 178px;
+  height: 178px;
+  line-height: 178px;
+  text-align: center;
+}
+
+.avatar {
+  width: 178px;
+  height: 178px;
+  display: block;
 }
 </style>
